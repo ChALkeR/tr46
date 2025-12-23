@@ -2,24 +2,34 @@
 
 const punycode = require("punycode/");
 const regexes = require("./lib/regexes.js");
-const mappingTable = require("./lib/mappingTable.json");
+const mappingTableRaw = require("./lib/mappingTable.json");
 const { STATUS_MAPPING } = require("./lib/statusMapping.js");
 
 function containsNonASCII(str) {
   return /[^\x00-\x7F]/u.test(str);
 }
 
+let mappingTable;
+
+function unpackMappingTable() {
+  if (mappingTable) {
+    return;
+  }
+
+  mappingTable = [];
+  let current = 0;
+  while (mappingTableRaw.length > 0) {
+    const row = mappingTableRaw.splice(0, 4); // Destroying the original, for mem
+    row[0] = current += row[0];
+    mappingTable.push(row);
+  }
+}
+
 function findStatus(val) {
+  unpackMappingTable();
+
   let start = 0;
   let end = mappingTable.length - 1;
-
-  // Unpack delta-coding in place once
-  if (mappingTable[2][0] < 10) {
-    let current = 0;
-    for (const row of mappingTable) {
-      row[0] = current += row[0];
-    }
-  }
 
   while (start <= end) {
     const mid = Math.floor((start + end) / 2);

@@ -36,7 +36,8 @@ async function main() {
     cells[1] = STATUS_MAPPING[cells[1]];
 
     if (cells[1] === STATUS_MAPPING.valid) {
-      lines.push(cells.slice(0, 2).flat());
+      cells[2] = 0;
+      lines.push(cells.slice(0, 3).flat());
       return;
     }
 
@@ -52,6 +53,8 @@ async function main() {
       });
 
       cells[2] = String.fromCodePoint(...replacement);
+    } else {
+      cells[2] = 0;
     }
 
     lines.push(cells.flat());
@@ -67,5 +70,5 @@ async function main() {
     last += line[0];
   }
 
-  fs.writeFileSync(path.resolve(__dirname, "../lib/mappingTable.json"), JSON.stringify(lines));
+  fs.writeFileSync(path.resolve(__dirname, "../lib/mappingTable.json"), JSON.stringify(lines.flat()));
 }
