@@ -60,5 +60,12 @@ async function main() {
   // We could drop valid chars, but those are only ~1000 ranges and
   // binary search is way to quick to even notice that
 
+  // Delta-code starts
+  let last = 0;
+  for (const line of lines) {
+    line[0] -= last;
+    last += line[0];
+  }
+
   fs.writeFileSync(path.resolve(__dirname, "../lib/mappingTable.json"), JSON.stringify(lines));
 }

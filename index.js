@@ -13,6 +13,14 @@ function findStatus(val) {
   let start = 0;
   let end = mappingTable.length - 1;
 
+  // Unpack delta-coding in place once
+  if (mappingTable[2][0] < 10) {
+    let current = 0;
+    for (const row of mappingTable) {
+      row[0] = current += row[0];
+    }
+  }
+
   while (start <= end) {
     const mid = Math.floor((start + end) / 2);
 
