@@ -17,11 +17,11 @@ function findStatus(val) {
     const mid = Math.floor((start + end) / 2);
 
     const target = mappingTable[mid];
-    const min = Array.isArray(target[0]) ? target[0][0] : target[0];
-    const max = Array.isArray(target[0]) ? target[0][1] : target[0];
+    const min = target[0];
+    const max = min + target[1];
 
     if (min <= val && max >= val) {
-      return target.slice(1);
+      return target.slice(2);
     } else if (min > val) {
       end = mid - 1;
     } else {

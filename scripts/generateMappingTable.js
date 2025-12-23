@@ -32,12 +32,11 @@ async function main() {
     const range = cells[0].split("..");
     const start = parseInt(range[0], 16);
     const end = parseInt(range[1] || range[0], 16);
-    cells[0] = end === start ? start : [start, end];
-
+    cells[0] = [start, end - start];
     cells[1] = STATUS_MAPPING[cells[1]];
 
     if (cells[1] === STATUS_MAPPING.valid) {
-      lines.push(cells.slice(0, 2));
+      lines.push(cells.slice(0, 2).flat());
       return;
     }
 
@@ -55,7 +54,7 @@ async function main() {
       cells[2] = String.fromCodePoint(...replacement);
     }
 
-    lines.push(cells);
+    lines.push(cells.flat());
   });
 
   // We could drop valid chars, but those are only ~1000 ranges and
