@@ -17,6 +17,7 @@ async function main() {
   }
   const body = await response.text();
 
+  const ranges = [];
   const lines = [];
 
   body.split("\n").forEach(l => {
@@ -33,16 +34,17 @@ async function main() {
     const start = parseInt(range[0], 16);
     const end = parseInt(range[1] || range[0], 16);
     cells[0] = [start, end - start];
-    cells[1] = STATUS_MAPPING[cells[1]];
+    ranges.push(cells.shift());
 
-    if (cells[1] !== STATUS_MAPPING.mapped && cells[1] !== STATUS_MAPPING.deviation) {
-      lines.push(cells.slice(0, 2).flat());
+    cells[0] = STATUS_MAPPING[cells[0]];
+    if (cells[0] !== STATUS_MAPPING.mapped && cells[0] !== STATUS_MAPPING.deviation) {
+      lines.push(cells[0]);
       return;
     }
 
-    if (cells[2] !== undefined) {
+    if (cells[1] !== undefined) {
       // Parse replacement to int[] array
-      let replacement = cells[2].split(" ");
+      let replacement = cells[1].split(" ");
       if (replacement[0] === "") { // Empty array
         replacement = [];
       }
@@ -51,7 +53,7 @@ async function main() {
         return parseInt(r, 16);
       });
 
-      cells[2] = String.fromCodePoint(...replacement);
+      cells[1] = String.fromCodePoint(...replacement);
     } else {
       throw new Error("Unexpected");
     }
@@ -64,10 +66,10 @@ async function main() {
 
   // Delta-code starts
   let last = 0;
-  for (const line of lines) {
-    line[0] -= last;
-    last += line[0];
+  for (const range of ranges) {
+    range[0] -= last;
+    last += range[0];
   }
 
-  fs.writeFileSync(path.resolve(__dirname, "../lib/mappingTable.json"), JSON.stringify(lines.flat()));
+  fs.writeFileSync(path.resolve(__dirname, "../lib/mappingTable.json"), JSON.stringify([ranges.flat(), lines.flat()]));
 }

@@ -2,28 +2,37 @@
 
 const punycode = require("punycode/");
 const regexes = require("./lib/regexes.js");
-const mappingTableRaw = require("./lib/mappingTable.json");
+const tablesRaw = require("./lib/mappingTable.json");
 const { STATUS_MAPPING } = require("./lib/statusMapping.js");
 
 function containsNonASCII(str) {
   return /[^\x00-\x7F]/u.test(str);
 }
 
-let mappingTable;
+let rangesTable,
+  mappingTable;
 
 function unpackMappingTable() {
   if (mappingTable) {
     return;
   }
 
-  mappingTable = [];
+  // Destroying the originals, for mem
+
+  rangesTable = [];
   let current = 0;
-  while (mappingTableRaw.length > 0) {
-    const status = mappingTableRaw[2];
-    const rowSize = status === STATUS_MAPPING.mapped || status === STATUS_MAPPING.deviation ? 4 : 3;
-    const row = mappingTableRaw.splice(0, rowSize); // Destroying the original, for mem
+  const [rangesRaw, mappingRaw] = tablesRaw;
+  while (rangesRaw.length > 0) {
+    const row = rangesRaw.splice(0, 2);
     row[0] = current += row[0];
-    mappingTable.push(row);
+    rangesTable.push(row);
+  }
+
+  mappingTable = [];
+  while (mappingRaw.length > 0) {
+    const status = mappingRaw[0];
+    const rowSize = status === STATUS_MAPPING.mapped || status === STATUS_MAPPING.deviation ? 2 : 1;
+    mappingTable.push(mappingRaw.splice(0, rowSize));
   }
 }
 
@@ -31,17 +40,17 @@ function findStatus(val) {
   unpackMappingTable();
 
   let start = 0;
-  let end = mappingTable.length - 1;
+  let end = rangesTable.length - 1;
 
   while (start <= end) {
     const mid = Math.floor((start + end) / 2);
 
-    const target = mappingTable[mid];
+    const target = rangesTable[mid];
     const min = target[0];
     const max = min + target[1];
 
     if (min <= val && max >= val) {
-      return target.slice(2);
+      return mappingTable[mid];
     } else if (min > val) {
       end = mid - 1;
     } else {
