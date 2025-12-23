@@ -18,7 +18,8 @@ async function main() {
   const body = await response.text();
 
   const ranges = [];
-  const lines = [];
+  const statuses = [];
+  const mappings = [];
 
   body.split("\n").forEach(l => {
     l = l.split("#")[0]; // Remove comments
@@ -36,15 +37,16 @@ async function main() {
     cells[0] = [start, end - start];
     ranges.push(cells.shift());
 
-    cells[0] = STATUS_MAPPING[cells[0]];
-    if (cells[0] !== STATUS_MAPPING.mapped && cells[0] !== STATUS_MAPPING.deviation) {
-      lines.push(cells[0]);
+    const status = STATUS_MAPPING[cells.shift()];
+    statuses.push(status);
+
+    if (status !== STATUS_MAPPING.mapped && status !== STATUS_MAPPING.deviation) {
       return;
     }
 
-    if (cells[1] !== undefined) {
+    if (cells[0] !== undefined) {
       // Parse replacement to int[] array
-      let replacement = cells[1].split(" ");
+      let replacement = cells[0].split(" ");
       if (replacement[0] === "") { // Empty array
         replacement = [];
       }
@@ -53,12 +55,10 @@ async function main() {
         return parseInt(r, 16);
       });
 
-      cells[1] = String.fromCodePoint(...replacement);
+      mappings.push(String.fromCodePoint(...replacement));
     } else {
       throw new Error("Unexpected");
     }
-
-    lines.push(cells.flat());
   });
 
   // We could drop valid chars, but those are only ~1000 ranges and
@@ -71,7 +71,7 @@ async function main() {
     last += range[0];
   }
 
-  // Condense repeats of N consecutive [1, 0] in ranges to -N
+  // Condense repeats of N consecutive [1, 0] in ranges to -N, flatten the rest
   const rangesCondensed = [];
   let repeats = 0;
   for (const row of ranges) {
@@ -85,13 +85,35 @@ async function main() {
       repeats = 0;
     }
 
-    rangesCondensed.push(row);
+    rangesCondensed.push(...row);
   }
 
   if (repeats > 0) {
     rangesCondensed.push(-repeats);
+    repeats = 0;
   }
 
-  const tablesRaw = [rangesCondensed.flat(), lines.flat()];
+  // Condense repeats of N consecutive STATUS_MAPPING.mapped to -N
+  const statusesCondensed = [];
+  for (const status of statuses) {
+    if (status === STATUS_MAPPING.mapped) {
+      repeats++;
+      continue;
+    }
+
+    if (repeats > 0) {
+      statusesCondensed.push(repeats === 1 ? STATUS_MAPPING.mapped : -repeats);
+      repeats = 0;
+    }
+
+    statusesCondensed.push(status);
+  }
+
+  if (repeats > 0) {
+    statusesCondensed.push(repeats === 1 ? STATUS_MAPPING.mapped : -repeats);
+    repeats = 0;
+  }
+
+  const tablesRaw = [rangesCondensed, statusesCondensed, mappings];
   fs.writeFileSync(path.resolve(__dirname, "../lib/mappingTable.json"), JSON.stringify(tablesRaw));
 }

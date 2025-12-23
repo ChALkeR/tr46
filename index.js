@@ -21,7 +21,7 @@ function unpackMappingTable() {
 
   rangesTable = [];
   let current = 0;
-  const [rangesRaw, mappingRaw] = tablesRaw;
+  const [rangesRaw, statusesRaw, mappingRaw] = tablesRaw;
   while (rangesRaw.length > 0) {
     if (rangesRaw[0] < 0) {
       const repeats = -rangesRaw.shift(); // Treat as this many repeats of [1, 0]
@@ -36,11 +36,20 @@ function unpackMappingTable() {
   }
 
   mappingTable = [];
-  while (mappingRaw.length > 0) {
-    const status = mappingRaw[0];
-    const rowSize = status === STATUS_MAPPING.mapped || status === STATUS_MAPPING.deviation ? 2 : 1;
-    mappingTable.push(mappingRaw.splice(0, rowSize));
+  for (const status of statusesRaw) {
+    if (status < 0) {
+      // Threat this as many repeats of STATUS_MAPPING.mapped
+      for (let i = 0; i < -status; i++) {
+        mappingTable.push([STATUS_MAPPING.mapped, mappingRaw.shift()]);
+      }
+    } else if (status === STATUS_MAPPING.mapped || status === STATUS_MAPPING.deviation) {
+      mappingTable.push([status, mappingRaw.shift()]);
+    } else {
+      mappingTable.push([status]);
+    }
   }
+
+  statusesRaw.length = 0; // Destroy for mem
 }
 
 function findStatus(val) {
