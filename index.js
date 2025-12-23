@@ -23,9 +23,16 @@ function unpackMappingTable() {
   let current = 0;
   const [rangesRaw, mappingRaw] = tablesRaw;
   while (rangesRaw.length > 0) {
-    const row = rangesRaw.splice(0, 2);
-    row[0] = current += row[0];
-    rangesTable.push(row);
+    if (rangesRaw[0] < 0) {
+      const repeats = -rangesRaw.shift(); // Treat as this many repeats of [1, 0]
+      for (let i = 0; i < repeats; i++) {
+        rangesTable.push([++current, 0]);
+      }
+    } else {
+      const row = rangesRaw.splice(0, 2);
+      row[0] = current += row[0];
+      rangesTable.push(row);
+    }
   }
 
   mappingTable = [];

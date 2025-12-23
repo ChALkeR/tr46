@@ -71,5 +71,27 @@ async function main() {
     last += range[0];
   }
 
-  fs.writeFileSync(path.resolve(__dirname, "../lib/mappingTable.json"), JSON.stringify([ranges.flat(), lines.flat()]));
+  // Condense repeats of N consecutive [1, 0] in ranges to -N
+  const rangesCondensed = [];
+  let repeats = 0;
+  for (const row of ranges) {
+    if (row[0] === 1 && row[1] === 0) {
+      repeats++;
+      continue;
+    }
+
+    if (repeats > 0) {
+      rangesCondensed.push(-repeats);
+      repeats = 0;
+    }
+
+    rangesCondensed.push(row);
+  }
+
+  if (repeats > 0) {
+    rangesCondensed.push(-repeats);
+  }
+
+  const tablesRaw = [rangesCondensed.flat(), lines.flat()];
+  fs.writeFileSync(path.resolve(__dirname, "../lib/mappingTable.json"), JSON.stringify(tablesRaw));
 }
