@@ -19,7 +19,9 @@ function unpackMappingTable() {
   mappingTable = [];
   let current = 0;
   while (mappingTableRaw.length > 0) {
-    const row = mappingTableRaw.splice(0, 4); // Destroying the original, for mem
+    const status = mappingTableRaw[2];
+    const rowSize = status === STATUS_MAPPING.mapped || status === STATUS_MAPPING.deviation ? 4 : 3;
+    const row = mappingTableRaw.splice(0, rowSize); // Destroying the original, for mem
     row[0] = current += row[0];
     mappingTable.push(row);
   }
@@ -54,9 +56,9 @@ function mapChars(domainName, { transitionalProcessing }) {
   let processed = "";
 
   for (const ch of domainName) {
-    const [status, mapping] = findStatus(ch.codePointAt(0));
+    const row = findStatus(ch.codePointAt(0)); // [status, mapping]
 
-    switch (status) {
+    switch (row[0]) {
       case STATUS_MAPPING.disallowed:
         processed += ch;
         break;
@@ -66,12 +68,12 @@ function mapChars(domainName, { transitionalProcessing }) {
         if (transitionalProcessing && ch === "ẞ") {
           processed += "ss";
         } else {
-          processed += mapping;
+          processed += row[1];
         }
         break;
       case STATUS_MAPPING.deviation:
         if (transitionalProcessing) {
-          processed += mapping;
+          processed += row[1];
         } else {
           processed += ch;
         }

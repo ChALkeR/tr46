@@ -35,9 +35,8 @@ async function main() {
     cells[0] = [start, end - start];
     cells[1] = STATUS_MAPPING[cells[1]];
 
-    if (cells[1] === STATUS_MAPPING.valid) {
-      cells[2] = 0;
-      lines.push(cells.slice(0, 3).flat());
+    if (cells[1] !== STATUS_MAPPING.mapped && cells[1] !== STATUS_MAPPING.deviation) {
+      lines.push(cells.slice(0, 2).flat());
       return;
     }
 
@@ -54,7 +53,7 @@ async function main() {
 
       cells[2] = String.fromCodePoint(...replacement);
     } else {
-      cells[2] = 0;
+      throw new Error("Unexpected");
     }
 
     lines.push(cells.flat());
